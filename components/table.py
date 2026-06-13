@@ -18,6 +18,9 @@ def render_table(page_name):
     pid = PROCESS_IDS[page_name]
     is_rokka = (page_name == "Rokka/Fukuwa")
     
+    # Current user for tracking isolation
+    current_user = st.session_state.get("username", "Unknown")
+    
     # Lazy Load Data
     if st.session_state["table_data"] is None or st.session_state.get("_last_pid") != pid:
         with st.spinner(f"Loading {page_name}..."):
@@ -39,8 +42,8 @@ def render_table(page_name):
         st.info("No records found.")
         return
 
-    # Check refs state
-    checked_refs = get_checked_refs() if is_rokka else set()
+    # Check refs state - USER SPECIFIC
+    checked_refs = get_checked_refs(current_user) if is_rokka else set()
 
     # Sort and Filter Options
     col_search, col_sort = st.columns([2, 1])
@@ -74,7 +77,7 @@ def render_table(page_name):
     c2.text(f"Page {st.session_state['page_num']}/{total_pages} ({total} records)")
     if c2.button("Next ➡", disabled=st.session_state["page_num"]==total_pages, key="btn_next"):
         st.session_state["page_num"] += 1; st.session_state["expanded_row"] = None; st.rerun()
-        
+       
     st.download_button("📥 Export CSV", df.to_csv(index=False).encode("utf-8-sig"), f"{page_name}.csv", "text/csv", key="btn_csv")
     st.divider()
 
@@ -85,7 +88,7 @@ def render_table(page_name):
     else:
         col_defs = st.columns([1.2, 1.2, 1.2, 1.2, 0.8, 0.8])
         headers = ["Ref No", "User", "Date", "Process", "Action", ""]
-        
+       
     for i, h in enumerate(headers):
         col_defs[i].markdown(f"**{h}**")
     st.divider()
@@ -107,7 +110,7 @@ def render_table(page_name):
             cols[0].markdown(f"<span style='color: #28a745; font-weight: bold;'>✅ {ref}</span>", unsafe_allow_html=True)
         else:
             cols[0].write(ref)
-            
+           
         cols[1].write(row["username"])
         cols[2].write(row["date"])
         cols[3].write(row["process"])
@@ -127,7 +130,7 @@ def render_table(page_name):
             if cols[4].button("🔄 Transfer", key=f"tr_{ref}", use_container_width=True):
                 do_transfer(ref, row["process"])
                 st.rerun()
-                
+               
             if cols[5].button("↩️ Return", key=f"ret_{ref}", use_container_width=True):
                 return_dialog(ref)
 
@@ -146,18 +149,18 @@ def render_table(page_name):
                 if act_cols[1].button("🔄 Transfer", key=f"ex_tr_{ref}", use_container_width=True):
                     do_transfer(ref, row["process"])
                     st.rerun()
-                    
+                   
                 if act_cols[2].button("↩️ Return", key=f"ex_ret_{ref}", use_container_width=True):
                     return_dialog(ref)
-                    
+                   
                 is_verified = ref in checked_refs
                 if not is_verified:
                     if act_cols[3].button("✅ Mark Verified", key=f"mark_ver_{ref}", type="primary", use_container_width=True):
-                        mark_as_checked(ref, st.session_state.get("username", "Unknown"))
+                        mark_as_checked(ref, current_user)
                         st.rerun()
                 else:
                     if act_cols[3].button("❌ Unmark Verified", key=f"unmark_ver_{ref}", type="secondary", use_container_width=True):
-                        unmark_as_checked(ref)
+                        unmark_as_checked(ref, current_user)
                         st.rerun()
                 
                 st.divider()
@@ -172,7 +175,7 @@ def render_table(page_name):
                     if isinstance(prop, list) and len(prop) > 0: 
                         munc = prop[0].get("MUNCNAME_NP", "-")
                     agency_detail = "-"
-
+                    
                     process_name = process.get("processname", " ").lower()
 
                     if "rokka" in process_name:
@@ -185,7 +188,7 @@ def render_table(page_name):
                             agency_detail = fukuwa[0].get("tblrokkaagency", {}).get("agencyname_np", "-")
 
                     st.markdown("##### 📄 Reference Details")
-                    
+                   
                     c1, c2, c3, c4 = st.columns(4)
                     c1.markdown(f"**Municipality**  \n<small>{munc}</small>", unsafe_allow_html=True)
                     c2.markdown(f"**Agency**  \n<small>{agency_detail}</small>", unsafe_allow_html=True)
