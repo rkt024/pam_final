@@ -10,7 +10,11 @@ VERIFY_SSL = False
 if not VERIFY_SSL:
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-TRACKING_DB_PATH = os.getenv("TRACKING_DB_PATH", "tracking.db")
+# Data directory - can be overridden via env var for Docker volumes
+DATA_DIR = os.getenv("DATA_DIR", os.path.join(os.path.dirname(__file__), "data"))
+os.makedirs(DATA_DIR, exist_ok=True)
+
+TRACKING_DB_PATH = os.getenv("TRACKING_DB_PATH", os.path.join(DATA_DIR, "tracking.db"))
 
 
 BASE_URL = "https://public.dolma.gov.np"

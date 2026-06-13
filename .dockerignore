@@ -1,15 +1,8 @@
-# Environment & secrets
-.env
-.env.*
-!.env.example
+# Docker ignore - exclude files from build context
 
-# Database
-*.db
-*.sqlite
-*.sqlite3
-
-# Data directory (managed by Docker volumes)
-data/
+# Git
+.git/
+.gitignore
 
 # Python
 __pycache__/
@@ -21,6 +14,8 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+coverage.xml
+htmlcov/
 
 # Virtual environment
 .venv/
@@ -39,6 +34,20 @@ ENV/
 .DS_Store
 Thumbs.db
 
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# Database (use volumes instead)
+*.db
+*.sqlite
+*.sqlite3
+data/
+
+# Logs
+*.log
+
 # Streamlit
 .streamlit/secrets.toml
 
@@ -47,8 +56,10 @@ dist/
 build/
 *.egg-info/
 
-# Logs
-*.log
-
 # Docker
+Dockerfile*
+docker-compose*
 .dockerignore
+
+# Documentation
+README.md
