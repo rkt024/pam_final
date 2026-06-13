@@ -1,0 +1,12 @@
+# Core dependencies
+streamlit==1.57.0
+requests==2.33.1
+pandas==3.0.2
+python-dotenv==1.2.2
+urllib3==2.6.3
+
+# Optional: for development (install with pip install -r requirements-dev.txt)
+# ruff==0.6.0
+# mypy==1.11.0
+# pytest==8.3.0
+# pytest-mock==3.14.0
