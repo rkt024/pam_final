@@ -1,4 +1,5 @@
 import os
+import socket
 import urllib3
 from dotenv import load_dotenv
 
@@ -17,13 +18,34 @@ os.makedirs(DATA_DIR, exist_ok=True)
 TRACKING_DB_PATH = os.getenv("TRACKING_DB_PATH", os.path.join(DATA_DIR, "tracking.db"))
 
 
-BASE_URL = "https://public.dolma.gov.np"
+# DOLMA API Configuration
+# Streamlit Cloud (AWS) DNS cannot resolve public.dolma.gov.np.
+# We connect by IP and send the hostname via the Host header.
+_DOLMA_HOSTNAME = "public.dolma.gov.np"
+_DOLMA_IP = None
+
+
+def _resolve_dolma_ip():
+    """Resolve public.dolma.gov.np to IP, with hardcoded fallback."""
+    global _DOLMA_IP
+    if _DOLMA_IP:
+        return _DOLMA_IP
+    try:
+        _DOLMA_IP = socket.gethostbyname(_DOLMA_HOSTNAME)
+    except Exception:
+        _DOLMA_IP = "202.45.146.50"  # fallback — update if server IP changes
+    return _DOLMA_IP
+
+
+DOLMA_IP = _resolve_dolma_ip()
+BASE_URL = f"https://{DOLMA_IP}"
 BASE_HEADERS = {
     "Content-Type": "application/json",
     "Accept": "application/json",
     "User-Agent": "Mozilla/5.0",
-    "Origin": BASE_URL,
-    "Referer": f"{BASE_URL}/dolma/",
+    "Origin": f"https://{_DOLMA_HOSTNAME}",
+    "Referer": f"https://{_DOLMA_HOSTNAME}/dolma/",
+    "Host": _DOLMA_HOSTNAME,
     "user-type": "3"
 }
 

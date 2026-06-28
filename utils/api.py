@@ -2,9 +2,20 @@ import streamlit as st
 import requests as req_lib
 from config import BASE_URL, BASE_HEADERS, VERIFY_SSL
 
+# Module-level session (reused after login for connection pooling)
+_api_session = None
+
+
+def get_api_session():
+    global _api_session
+    if _api_session is None:
+        _api_session = req_lib.Session()
+    return _api_session
+
+
 def api_call(url, method="POST", **kwargs):
     """Makes a request. If 401/403, relogs in and retries ONCE."""
-    session = st.session_state["http_session"]
+    session = get_api_session()
     token = st.session_state.get("token")
     headers = kwargs.pop("headers", {})
     if token:
@@ -35,13 +46,14 @@ def api_call(url, method="POST", **kwargs):
         st.error(f"API Error: {e}")
         return None
 
+
 def login_api(username, password):
     try:
-        # Use a fresh session for login to avoid any session-level header issues
+        # Use a fresh session for login to avoid any shared session issues
         with req_lib.Session() as fresh_session:
-            fresh_session.headers.update(BASE_HEADERS)
             res = fresh_session.post(
                 f"{BASE_URL}/pam/api/auth/login",
+                headers=BASE_HEADERS,
                 json={"usernameOrEmail": username, "password": password, "remember": True},
                 timeout=60,
                 verify=VERIFY_SSL
