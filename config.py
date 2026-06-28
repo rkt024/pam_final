@@ -26,14 +26,19 @@ _DOLMA_IP = None
 
 
 def _resolve_dolma_ip():
-    """Resolve public.dolma.gov.np to IP, with hardcoded fallback."""
+    """Resolve public.dolma.gov.np to IP, with hardcoded fallback.
+    Uses a short timeout to avoid blocking on unreachable DNS (e.g. Streamlit Cloud)."""
     global _DOLMA_IP
     if _DOLMA_IP:
         return _DOLMA_IP
+    # Set a short timeout for DNS resolution to avoid hanging
+    socket.setdefaulttimeout(3)
     try:
         _DOLMA_IP = socket.gethostbyname(_DOLMA_HOSTNAME)
     except Exception:
         _DOLMA_IP = "202.45.146.50"  # fallback — update if server IP changes
+    finally:
+        socket.setdefaulttimeout(None)  # reset to default (no timeout)
     return _DOLMA_IP
 
 
