@@ -56,7 +56,8 @@ button {
 
 def main():
     # State is already initialized above
-    init_tracking_db()
+    if st.session_state.get("logged_in"):
+        init_tracking_db()
 
     if not st.session_state["logged_in"]:
         login_page()

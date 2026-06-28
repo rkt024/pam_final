@@ -1,4 +1,5 @@
 import streamlit as st
+import requests as req_lib
 from config import BASE_URL, BASE_HEADERS, VERIFY_SSL
 
 def api_call(url, method="POST", **kwargs):
@@ -9,7 +10,7 @@ def api_call(url, method="POST", **kwargs):
     if token:
         headers["Authorization"] = f"Bearer {token}"
     kwargs["headers"] = headers
-    kwargs.setdefault("timeout", 30)
+    kwargs.setdefault("timeout", (10, 60))
     kwargs.setdefault("verify", VERIFY_SSL)
     
     try:
@@ -21,7 +22,7 @@ def api_call(url, method="POST", **kwargs):
                     f"{BASE_URL}/pam/api/auth/login",
                     headers=BASE_HEADERS,
                     json={"usernameOrEmail": u, "password": p, "remember": True},
-                    timeout=30, verify=VERIFY_SSL
+                    timeout=(10, 60), verify=VERIFY_SSL
                 )
                 if login_res.ok and login_res.json().get("status"):
                     new_token = login_res.json()["data"]["accessToken"]
@@ -36,15 +37,22 @@ def api_call(url, method="POST", **kwargs):
 
 def login_api(username, password):
     try:
-        with st.spinner("Logging in..."):
-            res = api_call(f"{BASE_URL}/pam/api/auth/login", headers=BASE_HEADERS, 
-                           json={"usernameOrEmail": username, "password": password, "remember": True})
+        # Use a fresh session for login to avoid any session-level header issues
+        with req_lib.Session() as fresh_session:
+            fresh_session.headers.update(BASE_HEADERS)
+            res = fresh_session.post(
+                f"{BASE_URL}/pam/api/auth/login",
+                json={"usernameOrEmail": username, "password": password, "remember": True},
+                timeout=(10, 60),
+                verify=VERIFY_SSL
+            )
+        
         if not res or res.status_code != 200:
             st.error(f"Server Error: {res.status_code if res else 'No Response'}")
             return False
         data = res.json()
         if not data.get("status"):
-            st.error("Invalid username or password")
+            st.error(f"Invalid username or password — {data.get('message', '')}")
             return False
             
         user = data["data"]["user"]
@@ -62,6 +70,15 @@ def login_api(username, password):
             "username": username, "password": password, "logged_in": True
         })
         return True
+    except req_lib.exceptions.ConnectTimeout:
+        st.error("Connection timed out. The server may be slow or unreachable. Please try again.")
+        return False
+    except req_lib.exceptions.ReadTimeout:
+        st.error("Server took too long to respond. Please try again.")
+        return False
+    except req_lib.exceptions.ConnectionError as e:
+        st.error(f"Cannot connect to server: {e}")
+        return False
     except Exception as e:
         st.error(f"Login Error: {e}")
         return False

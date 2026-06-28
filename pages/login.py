@@ -37,6 +37,7 @@ def login_page():
                         st.warning("⚠️ Please enter both username and password")
                     else:
                         with st.spinner("Authenticating..."):
-                            if login_api(username, password):
-                                st.success("✅ Login successful")
-                                st.rerun()
+                            success = login_api(username, password)
+                        if success:
+                            st.success("✅ Login successful")
+                            st.rerun()
