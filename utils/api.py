@@ -10,7 +10,7 @@ def api_call(url, method="POST", **kwargs):
     if token:
         headers["Authorization"] = f"Bearer {token}"
     kwargs["headers"] = headers
-    kwargs.setdefault("timeout", (10, 60))
+    kwargs.setdefault("timeout", 60)
     kwargs.setdefault("verify", VERIFY_SSL)
     
     try:
@@ -22,7 +22,7 @@ def api_call(url, method="POST", **kwargs):
                     f"{BASE_URL}/pam/api/auth/login",
                     headers=BASE_HEADERS,
                     json={"usernameOrEmail": u, "password": p, "remember": True},
-                    timeout=(10, 60), verify=VERIFY_SSL
+                    timeout=60, verify=VERIFY_SSL
                 )
                 if login_res.ok and login_res.json().get("status"):
                     new_token = login_res.json()["data"]["accessToken"]
@@ -43,7 +43,7 @@ def login_api(username, password):
             res = fresh_session.post(
                 f"{BASE_URL}/pam/api/auth/login",
                 json={"usernameOrEmail": username, "password": password, "remember": True},
-                timeout=(10, 60),
+                timeout=60,
                 verify=VERIFY_SSL
             )
         
